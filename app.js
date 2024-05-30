@@ -3,15 +3,9 @@ require("express-async-errors");
 
 const app = express();
 
-const passport = require("passport")
-const passportInit = require("./passport/passportInit")
-
-passportInit()
-app.use(passport.initialize())
-app.use(passport.session())
-
 require("dotenv").config();
 const session = require("express-session");
+
 
 // MONGO SESSION
 const MongoDBStore = require("connect-mongodb-session")(session);
@@ -40,47 +34,32 @@ if (app.get("env") === "production") {
 
 app.use(session(sessionParams));
 
+// PASSPORT
+const passport = require("passport");
+const passportInit = require("./passport/passportInit");
+
+passportInit();
+app.use(passport.initialize());
+app.use(passport.session());
+
 // FLASH MESSAGES
 app.use(require("connect-flash")());
+
+app.use(require("./middleware/storeLocals"));
+
+app.get("/", (req, res) => {
+  res.render("index");
+});
+
+app.use("/sessions", require("./routes/sessionRoutes"));
 
 app.set("view engine", "ejs");
 app.use(require("body-parser").urlencoded({ extended: true }));
 
-app.get("/", (req, res) => {
-  res.render("index")
-})
-
-app.use(require("./middleware/storeLocals"))
-app.get("/", (req, res) => {
-  res.render("index")
-})
-app.use("/sessions", require("./routes/sessionRoutes"))
-
-
-const auth = require("./middleware/auth");
+// SECRET WORD HANDLING
 const secretWordRouter = require("./routes/secretWord");
-app.use("/secretWord", auth, secretWordRouter);
-
-// // SECRET WORD HANDLING
-// app.get("/secretWord", (req, res) => {
-//     if (!req.session.secretWord) {
-//       req.session.secretWord = "syzygy";
-//     }
-//     res.locals.info = req.flash("info");
-//     res.locals.errors = req.flash("error");
-//     res.render("secretWord", { secretWord: req.session.secretWord });
-// });
-
-app.post("/secretWord", (req, res) => {
-    if (req.body.secretWord.toUpperCase()[0] == "P") {
-      req.flash("error", "That word won't work!");
-      req.flash("error", "You can't use words that start with p.");
-    } else {
-      req.session.secretWord = req.body.secretWord;
-      req.flash("info", "The secret word was changed.");
-    }
-    res.redirect("/secretWord");
-});
+const auth = require("./middleware/auth");
+app.use("/secretWord", secretWordRouter);
   
 
 app.use((req, res) => {
