@@ -33,6 +33,7 @@ if (app.get("env") === "production") {
 }
 
 app.use(session(sessionParams));
+app.use(require("body-parser").urlencoded({ extended: true }));
 
 // PASSPORT
 const passport = require("passport");
@@ -54,7 +55,7 @@ app.get("/", (req, res) => {
 app.use("/sessions", require("./routes/sessionRoutes"));
 
 app.set("view engine", "ejs");
-app.use(require("body-parser").urlencoded({ extended: true }));
+
 
 // SECRET WORD HANDLING
 const secretWordRouter = require("./routes/secretWord");
